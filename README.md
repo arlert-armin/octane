@@ -1,3 +1,7 @@
+# Archival
+This repo has been archived and may be deleted in the future. Check out Kora:
+https://github.com/solana-foundation/kora
+
 # Octane ⛽
 
 1. [What is Octane?](#what-is-octane)
