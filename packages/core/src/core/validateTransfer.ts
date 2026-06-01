@@ -15,14 +15,28 @@ export async function validateTransfer(
     transaction: Transaction,
     allowedTokens: TokenFee[]
 ): Promise<DecodedTransferInstruction | DecodedTransferCheckedInstruction> {
-    // Get the first instruction of the transaction
-    const [first] = transaction.instructions;
-    if (!first) throw new Error('missing instructions');
+    if (!transaction.instructions.length) throw new Error('missing instructions');
 
-    // Decode the first instruction and make sure it's a valid SPL Token `Transfer` or `TransferChecked` instruction
-    const instruction = decodeInstruction(first);
-    if (!(isTransferInstruction(instruction) || isTransferCheckedInstruction(instruction)))
-        throw new Error('invalid instruction');
+    // Find the SPL Token transfer that pays Octane's fee. Wallets (e.g. Phantom)
+    // may prepend ComputeBudget priority-fee instructions, so the fee transfer
+    // isn't necessarily the first instruction.
+    let instruction: DecodedTransferInstruction | DecodedTransferCheckedInstruction | undefined;
+    for (const ix of transaction.instructions) {
+        let decoded: DecodedTransferInstruction | DecodedTransferCheckedInstruction;
+        try {
+            const d = decodeInstruction(ix);
+            if (!(isTransferInstruction(d) || isTransferCheckedInstruction(d))) continue;
+            decoded = d;
+        } catch {
+            continue; // not an SPL Token instruction (ComputeBudget, etc.)
+        }
+        // Match the transfer whose destination is one of Octane's fee accounts.
+        if (allowedTokens.some((token) => token.account.equals(decoded.keys.destination.pubkey))) {
+            instruction = decoded;
+            break;
+        }
+    }
+    if (!instruction) throw new Error('no token fee transfer to Octane found');
 
     const {
         keys: { source, destination, owner },
