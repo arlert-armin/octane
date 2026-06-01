@@ -1,5 +1,5 @@
 {
-    "rpcUrl": "https://api.devnet.solana.com",
+    "rpcUrl": "https://api.mainnet-beta.solana.com",
     "maxSignatures": 2,
     "lamportsPerSignature": 5000,
     "corsOrigin": true,
@@ -7,32 +7,25 @@
         "transfer": {
             "tokens": [
                 {
-                    "mint": "__PLACEHOLDER__",
-                    "account": "__PLACEHOLDER__",
-                    "decimals": 9,
-                    "fee": 10000000
+                    "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    "account": "GDBv7B4BM2ZDGUganjezfNFgPx5SQ6t38A8V4r77AAdu",
+                    "decimals": 6,
+                    "fee": 10000
                 }
             ]
         },
         "createAssociatedTokenAccount": {
             "tokens": [
                 {
-                    "mint": "__PLACEHOLDER__",
-                    "account": "__PLACEHOLDER__",
-                    "decimals": 9,
-                    "fee": 10000000
+                    "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+                    "account": "GDBv7B4BM2ZDGUganjezfNFgPx5SQ6t38A8V4r77AAdu",
+                    "decimals": 6,
+                    "fee": 10000
                 }
             ]
         },
         "whirlpoolsSwap": {
-            "tokens": [
-                {
-                    "mint": "__PLACEHOLDER__",
-                    "account": "__PLACEHOLDER__",
-                    "decimals": 9,
-                    "fee": 10000000
-                }
-            ]
+            "tokens": []
         }
     }
 }
