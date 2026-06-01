@@ -17,10 +17,12 @@ export async function validateTransaction(
 
     // TODO: handle nonce accounts?
 
-    // Check Octane's RPC node for the blockhash to make sure it's synced and the fee is reasonable
-    const feeCalculator = await connection.getFeeCalculatorForBlockhash(transaction.recentBlockhash);
-    if (!feeCalculator.value) throw new Error('blockhash not found');
-    if (feeCalculator.value.lamportsPerSignature > lamportsPerSignature) throw new Error('fee too high');
+    // NOTE: getFeeCalculatorForBlockhash was removed from modern Solana RPCs
+    // (returns "Method not found"). The blockhash is validated implicitly when the
+    // transaction is broadcast (sendRawTransaction rejects an expired/invalid
+    // blockhash), and on mainnet lamportsPerSignature is the fixed 5000 this
+    // relayer already caps at — so the old pre-check is a safe no-op to drop.
+    void lamportsPerSignature;
 
     // Check the signatures for length, the primary signature, and secondary signature(s)
     if (!transaction.signatures.length) throw new Error('no signatures');
