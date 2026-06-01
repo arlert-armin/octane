@@ -36,7 +36,12 @@ jobs:
           curl -sS -X PATCH "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}${TEAM}" \
             -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"rootDirectory":"packages/server","framework":"nextjs"}' -o /dev/null -w "set-root HTTP %{http_code}\n"
+            -d '{
+              "rootDirectory": "packages/server",
+              "framework": "nextjs",
+              "installCommand": "cd ../.. && yarn install --frozen-lockfile",
+              "buildCommand": "cd ../.. && yarn build"
+            }' -o /dev/null -w "set-root HTTP %{http_code}\n"
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
