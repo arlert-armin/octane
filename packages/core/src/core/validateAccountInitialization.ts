@@ -31,7 +31,7 @@ export async function validateAccountInitializationInstructions(
         throw new Error('account instruction should call associated token program');
     }
 
-    const [, , ownerMeta, mintMeta] = instruction.keys;
+    const [payerMeta, ataMeta, ownerMeta, mintMeta] = instruction.keys;
 
     const associatedToken = await getAssociatedTokenAddress(mintMeta.pubkey, ownerMeta.pubkey);
 
@@ -40,14 +40,15 @@ export async function validateAccountInitializationInstructions(
         throw new Error('account already exists');
     }
 
-    const referenceInstruction = createAssociatedTokenAccountInstruction(
-        feePayer.publicKey,
-        associatedToken,
-        ownerMeta.pubkey,
-        mintMeta.pubkey
-    );
-    if (!areInstructionsEqual(referenceInstruction, instruction)) {
-        throw new Error('unable to match associated account instruction');
+    // Verify the payer is the fee payer (Octane) and the created account is the
+    // correct ATA. We check the meaningful fields directly instead of
+    // areInstructionsEqual, which breaks across spl-token versions (the rent
+    // sysvar account was removed from the ATA instruction).
+    if (!payerMeta.pubkey.equals(feePayer.publicKey)) {
+        throw new Error('account init payer must be the fee payer');
+    }
+    if (!ataMeta.pubkey.equals(associatedToken)) {
+        throw new Error('account init creates the wrong associated token account');
     }
 
     // Prevent trying to create same accounts too many times within a short timeframe (per one recent blockhash)
