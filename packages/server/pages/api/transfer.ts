@@ -69,11 +69,21 @@ export default async function (request: NextApiRequest, response: NextApiRespons
 
         // Respond with the confirmed transaction signature
         response.status(200).send({ status: 'ok', signature });
-    } catch (error) {
+    } catch (error: any) {
         let message = '';
         if (error instanceof Error) {
             message = error.message;
         }
-        response.status(400).send({ status: 'error', message });
+        // Surface more detail so the client can see what actually failed
+        // (web3.js SendTransactionError keeps the reason in .logs, not .message).
+        const detail = {
+            name: error?.name,
+            message: error?.message,
+            logs: error?.logs,
+            string: String(error),
+        };
+        // eslint-disable-next-line no-console
+        console.error('transfer error:', detail);
+        response.status(400).send({ status: 'error', message: message || detail.string, detail });
     }
 }
