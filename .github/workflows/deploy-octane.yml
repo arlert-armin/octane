@@ -27,6 +27,16 @@ jobs:
         with:
           node-version: 20
       - run: npm install -g vercel@latest
+      # Octane's Next.js app lives in packages/server — make the Vercel project
+      # build from there (and detect Next.js) instead of the monorepo root.
+      - name: Set project root directory + framework
+        run: |
+          TEAM=""
+          case "${{ secrets.VERCEL_ORG_ID }}" in team_*) TEAM="?teamId=${{ secrets.VERCEL_ORG_ID }}";; esac
+          curl -sS -X PATCH "https://api.vercel.com/v9/projects/${{ secrets.VERCEL_PROJECT_ID }}${TEAM}" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"rootDirectory":"packages/server","framework":"nextjs"}' -o /dev/null -w "set-root HTTP %{http_code}\n"
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
