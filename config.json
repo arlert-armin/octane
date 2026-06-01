@@ -1,5 +1,5 @@
 {
-    "rpcUrl": "https://api.mainnet-beta.solana.com",
+    "rpcUrl": "https://solana-rpc.publicnode.com",
     "maxSignatures": 2,
     "lamportsPerSignature": 5000,
     "corsOrigin": true,
