@@ -3,12 +3,19 @@
     "maxSignatures": 2,
     "lamportsPerSignature": 5000,
     "corsOrigin": true,
+    "returnSignature": { "type": "allowAll" },
     "endpoints": {
         "transfer": {
             "tokens": [
                 {
                     "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
                     "account": "GDBv7B4BM2ZDGUganjezfNFgPx5SQ6t38A8V4r77AAdu",
+                    "decimals": 6,
+                    "fee": 10000
+                },
+                {
+                    "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                    "account": "HA1cJxY1gq1uwGCtNnPcFyCggfFkjWARR34XswtaTDKu",
                     "decimals": 6,
                     "fee": 10000
                 }
@@ -19,6 +26,12 @@
                 {
                     "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
                     "account": "GDBv7B4BM2ZDGUganjezfNFgPx5SQ6t38A8V4r77AAdu",
+                    "decimals": 6,
+                    "fee": 10000
+                },
+                {
+                    "mint": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+                    "account": "HA1cJxY1gq1uwGCtNnPcFyCggfFkjWARR34XswtaTDKu",
                     "decimals": 6,
                     "fee": 10000
                 }

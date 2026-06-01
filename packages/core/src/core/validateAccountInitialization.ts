@@ -1,4 +1,4 @@
-import { Connection, Transaction, Keypair } from '@solana/web3.js';
+import { ComputeBudgetProgram, Connection, Transaction, Keypair } from '@solana/web3.js';
 import {
     ASSOCIATED_TOKEN_PROGRAM_ID,
     createAssociatedTokenAccountInstruction,
@@ -15,12 +15,17 @@ export async function validateAccountInitializationInstructions(
 ): Promise<void> {
     const transaction = Transaction.from(originalTransaction.serialize({ requireAllSignatures: false }));
 
-    // Transaction instructions should be: [fee transfer, account initialization]
+    // Ignore ComputeBudget instructions that wallets (e.g. Phantom) may prepend.
+    const instructions = transaction.instructions.filter(
+        (ix) => !ix.programId.equals(ComputeBudgetProgram.programId)
+    );
+
+    // Instructions should be: [fee transfer, account initialization]
     // The fee transfer is validated with validateTransfer in the action function.
-    if (transaction.instructions.length != 2) {
+    if (instructions.length != 2) {
         throw new Error('transaction should contain 2 instructions: fee payment, account init');
     }
-    const [, instruction] = transaction.instructions;
+    const [, instruction] = instructions;
 
     if (!instruction.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID)) {
         throw new Error('account instruction should call associated token program');
