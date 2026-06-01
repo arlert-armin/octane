@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install -g vercel@latest
+      - run: npm install -g vercel@54.6.1
       # Octane's Next.js app lives in packages/server — make the Vercel project
       # build from there (and detect Next.js) instead of the monorepo root.
       - name: Set project root directory + framework
