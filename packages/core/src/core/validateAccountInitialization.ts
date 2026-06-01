@@ -1,11 +1,6 @@
-import { ComputeBudgetProgram, Connection, Transaction, Keypair } from '@solana/web3.js';
-import {
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    createAssociatedTokenAccountInstruction,
-    getAssociatedTokenAddress,
-} from '@solana/spl-token';
+import { Connection, Transaction, Keypair } from '@solana/web3.js';
+import { ASSOCIATED_TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from '@solana/spl-token';
 import { Cache } from 'cache-manager';
-import { areInstructionsEqual } from './instructions';
 
 export async function validateAccountInitializationInstructions(
     connection: Connection,
@@ -15,24 +10,18 @@ export async function validateAccountInitializationInstructions(
 ): Promise<void> {
     const transaction = Transaction.from(originalTransaction.serialize({ requireAllSignatures: false }));
 
-    // Ignore ComputeBudget instructions that wallets (e.g. Phantom) may prepend.
-    const instructions = transaction.instructions.filter(
-        (ix) => !ix.programId.equals(ComputeBudgetProgram.programId)
+    // Find the associated-token-account creation instruction. We don't require a
+    // fixed instruction count/position: wallets (e.g. Phantom) inject ComputeBudget
+    // and Lighthouse guard instructions, and the fee transfer is validated
+    // separately by validateTransfer.
+    const instruction = transaction.instructions.find((ix) =>
+        ix.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID)
     );
-
-    // Instructions should be: [fee transfer, account initialization]
-    // The fee transfer is validated with validateTransfer in the action function.
-    if (instructions.length != 2) {
-        throw new Error('transaction should contain 2 instructions: fee payment, account init');
-    }
-    const [, instruction] = instructions;
-
-    if (!instruction.programId.equals(ASSOCIATED_TOKEN_PROGRAM_ID)) {
-        throw new Error('account instruction should call associated token program');
+    if (!instruction) {
+        throw new Error('transaction must contain an associated token account creation');
     }
 
     const [payerMeta, ataMeta, ownerMeta, mintMeta] = instruction.keys;
-
     const associatedToken = await getAssociatedTokenAddress(mintMeta.pubkey, ownerMeta.pubkey);
 
     // Check if account isn't already created
@@ -41,9 +30,8 @@ export async function validateAccountInitializationInstructions(
     }
 
     // Verify the payer is the fee payer (Octane) and the created account is the
-    // correct ATA. We check the meaningful fields directly instead of
-    // areInstructionsEqual, which breaks across spl-token versions (the rent
-    // sysvar account was removed from the ATA instruction).
+    // correct ATA. We check meaningful fields directly instead of
+    // areInstructionsEqual, which breaks across spl-token versions (rent sysvar).
     if (!payerMeta.pubkey.equals(feePayer.publicKey)) {
         throw new Error('account init payer must be the fee payer');
     }
@@ -51,7 +39,18 @@ export async function validateAccountInitializationInstructions(
         throw new Error('account init creates the wrong associated token account');
     }
 
-    // Prevent trying to create same accounts too many times within a short timeframe (per one recent blockhash)
+    // Anti-drain: the fee payer must not be writable/signer in any OTHER
+    // instruction (only legitimately so as the ATA-creation rent payer above).
+    for (const ix of transaction.instructions) {
+        if (ix === instruction) continue;
+        for (const key of ix.keys) {
+            if ((key.isWritable || key.isSigner) && key.pubkey.equals(feePayer.publicKey)) {
+                throw new Error('fee payer must not be used by other instructions');
+            }
+        }
+    }
+
+    // Prevent creating the same account too many times within a short timeframe (per one recent blockhash)
     const key = `account/${transaction.recentBlockhash}_${associatedToken.toString()}`;
     if (await cache.get(key)) throw new Error('duplicate account within same recent blockhash');
     await cache.set(key, true);
