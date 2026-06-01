@@ -43,6 +43,20 @@ jobs:
               "buildCommand": "cd ../.. && yarn build",
               "ssoProtection": null
             }' -o /dev/null -w "set-root HTTP %{http_code}\n"
+      # Push the fee-payer secret to the Vercel project env (from a GitHub secret,
+      # never committed). Octane's env.ts reads process.env.SECRET_KEY.
+      - name: Set SECRET_KEY on Vercel project
+        env:
+          OCTANE_SECRET_KEY: ${{ secrets.OCTANE_SECRET_KEY }}
+        run: |
+          if [ -z "$OCTANE_SECRET_KEY" ]; then echo "::warning::OCTANE_SECRET_KEY secret not set — skipping"; exit 0; fi
+          TEAM=""
+          case "${{ secrets.VERCEL_ORG_ID }}" in team_*) TEAM="&teamId=${{ secrets.VERCEL_ORG_ID }}";; esac
+          curl -sS -X POST "https://api.vercel.com/v10/projects/${{ secrets.VERCEL_PROJECT_ID }}/env?upsert=true${TEAM}" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"key\":\"SECRET_KEY\",\"value\":\"${OCTANE_SECRET_KEY}\",\"type\":\"encrypted\",\"target\":[\"production\",\"preview\",\"development\"]}" \
+            -o /dev/null -w "set-secret HTTP %{http_code}\n"
       - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
       - run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
